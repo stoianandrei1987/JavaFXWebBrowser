@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="JavaWebFX:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/JavaWebFX_jar</output-path>
+    <root id="archive" name="JavaWebFX.jar">
+      <element id="module-output" name="JavaWebFX" />
+    </root>
+  </artifact>
+</component>

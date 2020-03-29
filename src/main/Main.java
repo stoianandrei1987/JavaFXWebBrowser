@@ -17,6 +17,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
@@ -24,6 +26,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Observable;
 
@@ -128,10 +131,28 @@ public class Main extends Application {
         GridPane.setConstraints(view, 0, 1, 1, 1);
         g.getChildren().add(view);
 
-        Button backBtn = new Button("B"),
-                forwBtn = new Button("F"),
-                stopBtn = new Button("S"),
-                reloadBtn = new Button("R");
+        Button backBtn = new Button(),
+                forwBtn = new Button(),
+                stopBtn = new Button(),
+                reloadBtn = new Button();
+
+        Image backIcon = new Image(getClass().getResourceAsStream("/icons/back.png"));
+        backBtn.setGraphic(new ImageView(backIcon));
+
+        Image forwIcon = new Image(getClass().getResourceAsStream("/icons/forward.png"));
+        forwBtn.setGraphic(new ImageView(forwIcon));
+
+        Image stopIcon = new Image(getClass().getResourceAsStream("/icons/stop.png"));
+        stopBtn.setGraphic(new ImageView(stopIcon));
+
+        Image reloadIcon = new Image(getClass().getResourceAsStream("/icons/reload.png"));
+        reloadBtn.setGraphic(new ImageView(reloadIcon));
+
+        for(Button b : Arrays.asList(backBtn, forwBtn, stopBtn, reloadBtn)) {
+            b.getStyleClass().add("upper-btns");
+        }
+
+
 
         stopBtn.setOnAction(event -> {
             view.getEngine().getLoadWorker().cancel();
@@ -165,6 +186,7 @@ public class Main extends Application {
         upperHBox.setAlignment(Pos.CENTER_LEFT);
         upperHBox.setSpacing(20);
         upperHBox.setPadding(new Insets(0, 50, 0, 50));
+        upperHBox.setStyle("-fx-background-color: white;");
 
 
         textField = new TextField();
@@ -178,6 +200,7 @@ public class Main extends Application {
         primaryStage.setMinHeight(700);
         primaryStage.setMinWidth(700);
         myScene = new Scene(g);
+        myScene.getStylesheets().add("stylesheet.css");
         primaryStage.setScene(myScene);
 
         primaryStage.show();
@@ -187,6 +210,8 @@ public class Main extends Application {
 
         });
     }
+
+
 
 
     public static void main(String[] args) {

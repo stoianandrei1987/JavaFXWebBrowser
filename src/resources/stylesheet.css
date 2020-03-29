@@ -1,0 +1,7 @@
+.upper-btns {
+-fx-background-color: white;
+}
+
+.upper-btns:hover {
+-fx-background-color: #D9D9D9;
+}
