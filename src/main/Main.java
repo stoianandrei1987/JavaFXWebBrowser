@@ -1,10 +1,9 @@
 package main;
 
+import com.google.gson.Gson;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableBooleanValue;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -24,11 +23,16 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import javafx.util.Callback;
+import org.controlsfx.control.textfield.AutoCompletionBinding;
+import org.controlsfx.control.textfield.TextFields;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Observable;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class Main extends Application {
@@ -41,15 +45,14 @@ public class Main extends Application {
     private List<HistoryItem> backForwardList;
     private int backForwardIndex;
     private boolean backForwardWasPressed = false;
+    private Map<String, Double> visitedAddresses = new HashMap<>();
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         backForwardIndex = -1;
         backForwardList = new ArrayList<>();
         backForwardWasPressed = false;
-
         historyItemObservableList = FXCollections.observableArrayList();
-        //   Parent root = FXMLLoader.load(getClass().getResource("/sample.fxml"));
         primaryStage.setTitle("Web Browser");
         view = new WebView();
         Platform.runLater(() ->
@@ -82,7 +85,7 @@ public class Main extends Application {
                     currItem.setCreatedAt(LocalDateTime.now());
                     historyItemObservableList.add(currItem);
                     backForwardList.add(backForwardIndex, currItem);
-                    if(!backForwardWasPressed) backForwardList = backForwardList.subList(0, backForwardIndex + 1);
+                    if (!backForwardWasPressed) backForwardList = backForwardList.subList(0, backForwardIndex + 1);
                     backForwardWasPressed = false;
 
                     //deletes penultimate entry if it is squal to final entry
@@ -110,7 +113,6 @@ public class Main extends Application {
                 }
             }
         });
-
 
 
         progressBar.progressProperty().bind(view.getEngine().getLoadWorker().progressProperty());
@@ -148,10 +150,9 @@ public class Main extends Application {
         Image reloadIcon = new Image(getClass().getResourceAsStream("/icons/reload.png"));
         reloadBtn.setGraphic(new ImageView(reloadIcon));
 
-        for(Button b : Arrays.asList(backBtn, forwBtn, stopBtn, reloadBtn)) {
+        for (Button b : Arrays.asList(backBtn, forwBtn, stopBtn, reloadBtn)) {
             b.getStyleClass().add("upper-btns");
         }
-
 
 
         stopBtn.setOnAction(event -> {
@@ -190,6 +191,24 @@ public class Main extends Application {
 
 
         textField = new TextField();
+        TextFields.bindAutoCompletion(textField, new Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>>() {
+            @Override
+            public Collection<String> call(AutoCompletionBinding.ISuggestionRequest param) {
+
+                String paramUserText = param.getUserText();
+                Comparator<String> stringComparator = new Comparator<String>() {
+                    @Override
+                    public int compare(String o1, String o2) {
+                        if((visitedAddresses.get(o1) - visitedAddresses.get(o2)) > 0) return -1;
+                        else return 1;
+                    }
+                };
+                return visitedAddresses.keySet().stream().filter(s -> s.contains(paramUserText)).
+                        sorted(stringComparator).limit(5).collect(Collectors.toList());
+
+            }
+        });
+
         textField.setOnKeyPressed(textFieldHandler);
         upperHBox.getChildren().addAll(backBtn, forwBtn, stopBtn, reloadBtn, textField);
         GridPane.setConstraints(upperHBox, 0, 0, 1, 1);
@@ -205,14 +224,26 @@ public class Main extends Application {
 
         primaryStage.show();
         primaryStage.setOnCloseRequest((e) -> {
+            exitGSON();
             Platform.exit();
             System.exit(0);
 
         });
     }
 
+    public void initializeGSON() {
 
+    }
 
+    public void exitGSON() {
+        Gson gson = new Gson();
+
+        try {
+            gson.toJson(visitedAddresses, new FileWriter("json/visited.json"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String[] args) {
         launch(args);
@@ -273,8 +304,27 @@ public class Main extends Application {
         return false;
     }
 
+    public void registerVisit(String url) {
+
+        if (url.startsWith("https://")) url = url.substring(8);
+        else url = url.substring(7);
+        if(url.contains("/")) url = url.substring(0, url.indexOf("/"));
+
+        if(visitedAddresses.containsKey(url)) {
+            Double nv = visitedAddresses.get(url);
+            nv++;
+            visitedAddresses.replace(url, nv);
+        } else {
+            visitedAddresses.put(url, Double.valueOf(1));
+        }
+
+    }
+
     public void loadPage(String url) {
+
+        registerVisit(url);
         Platform.runLater(() -> view.getEngine().load(url));
+
     }
 
 
