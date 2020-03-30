@@ -34,6 +34,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.lang.Thread.currentThread;
+
 
 public class Main extends Application {
 
@@ -45,21 +47,29 @@ public class Main extends Application {
     private List<HistoryItem> backForwardList;
     private int backForwardIndex;
     private boolean backForwardWasPressed = false;
+    private boolean incognitoMode = false;
     private Map<String, Long> visitedAddresses = new HashMap<>();
 
 
     public void initialize() {
+
         backForwardIndex = -1;
         backForwardList = new ArrayList<>();
         backForwardWasPressed = false;
         historyItemObservableList = IOClass.getHistory();
         visitedAddresses = IOClass.getAddresses();
         view = new WebView();
-        ScheduledExecutorService service = Executors.newScheduledThreadPool(2);
-        Runnable writeAddresses = () -> {IOClass.writeAddresses(visitedAddresses);};
-        Runnable writeHistory = () -> {IOClass.writeHistory(historyItemObservableList);};
-        service.scheduleWithFixedDelay(writeHistory, 5, 30, TimeUnit.SECONDS);
-        service.scheduleWithFixedDelay(writeAddresses, 0, 30, TimeUnit.SECONDS);
+        currentThread().setPriority(6);
+
+        Runnable writeThings = () -> {
+            IOClass.writeAddresses(visitedAddresses);
+            IOClass.writeHistory(historyItemObservableList);
+        };
+
+        if(incognitoMode == false) {
+            ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
+            service.scheduleWithFixedDelay(writeThings, 0, 60, TimeUnit.SECONDS);
+        }
 
     }
 
@@ -118,15 +128,15 @@ public class Main extends Application {
         view.getEngine().locationProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                if (true) {
 
-                    currItem = new HistoryItem();
-                    currItem.setUri(newValue);
-                    textField.setText(newValue);
-                    if(oldValue!=null && !shortenURL(oldValue).equals(shortenURL(newValue))) registerVisit(shortenURL(newValue));
-                    historyItemObservableList.add(currItem);
+                currItem = new HistoryItem();
+                currItem.setUri(newValue);
+                textField.setText(newValue);
+                if(oldValue!=null && !shortenURL(oldValue).equals(shortenURL(newValue)))
+                    registerVisit(shortenURL(newValue));
 
-                }
+
+
             }
         });
 

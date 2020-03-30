@@ -38,14 +38,16 @@ public class IOClass {
 
     public static void writeAddresses(Map<String, Long> addresses) {
 
+        System.out.println("Writing Addresses");
         String json =  new Gson().toJson(addresses);
         writeStringToFile(json, "src/resources/json/visits.json");
+
     }
 
 
     public static void writeHistory(ObservableList<HistoryItem> observableList) {
 
-
+        System.out.println("Writing history...");
         ArrayList<HistoryItem> list = new ArrayList<>(observableList.subList(0, observableList.size() - 1));
         String json = new Gson().toJson(list);
         writeStringToFile(json, "src/resources/json/history.json");
