@@ -27,11 +27,11 @@ import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -45,16 +45,30 @@ public class Main extends Application {
     private List<HistoryItem> backForwardList;
     private int backForwardIndex;
     private boolean backForwardWasPressed = false;
-    private Map<String, Double> visitedAddresses = new HashMap<>();
+    private Map<String, Long> visitedAddresses = new HashMap<>();
 
-    @Override
-    public void start(Stage primaryStage) throws Exception {
+
+    public void initialize() {
         backForwardIndex = -1;
         backForwardList = new ArrayList<>();
         backForwardWasPressed = false;
-        historyItemObservableList = FXCollections.observableArrayList();
-        primaryStage.setTitle("Web Browser");
+        historyItemObservableList = IOClass.getHistory();
+        visitedAddresses = IOClass.getAddresses();
         view = new WebView();
+        ScheduledExecutorService service = Executors.newScheduledThreadPool(2);
+        Runnable writeAddresses = () -> {IOClass.writeAddresses(visitedAddresses);};
+        Runnable writeHistory = () -> {IOClass.writeHistory(historyItemObservableList);};
+        service.scheduleWithFixedDelay(writeHistory, 5, 30, TimeUnit.SECONDS);
+        service.scheduleWithFixedDelay(writeAddresses, 0, 30, TimeUnit.SECONDS);
+
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+
+        initialize();
+        primaryStage.setTitle("Web Browser");
+
         Platform.runLater(() ->
                 view.getEngine().load("https://www.google.ro")
         );
@@ -69,7 +83,7 @@ public class Main extends Application {
         r3.setMinHeight(20);
         r3.setMaxHeight(20);
 
-        Label loadLabel = new Label("Loading. Please Wait!");
+        Label loadLabel = new Label("Loading. Please Wait!   ");
         ProgressBar progressBar = new ProgressBar();
         loadLabel.setMinWidth(79);
         progressBar.setMinWidth(500);
@@ -105,10 +119,12 @@ public class Main extends Application {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
                 if (true) {
+
                     currItem = new HistoryItem();
                     currItem.setUri(newValue);
                     textField.setText(newValue);
-
+                    if(oldValue!=null && !shortenURL(oldValue).equals(shortenURL(newValue))) registerVisit(shortenURL(newValue));
+                    historyItemObservableList.add(currItem);
 
                 }
             }
@@ -224,26 +240,17 @@ public class Main extends Application {
 
         primaryStage.show();
         primaryStage.setOnCloseRequest((e) -> {
-            exitGSON();
+
+      //      IOClass.writeAddresses(visitedAddresses);
+      //      IOClass.writeHistory(historyItemObservableList);
+
             Platform.exit();
             System.exit(0);
 
         });
     }
 
-    public void initializeGSON() {
 
-    }
-
-    public void exitGSON() {
-        Gson gson = new Gson();
-
-        try {
-            gson.toJson(visitedAddresses, new FileWriter("json/visited.json"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     public static void main(String[] args) {
         launch(args);
@@ -304,25 +311,28 @@ public class Main extends Application {
         return false;
     }
 
-    public void registerVisit(String url) {
-
+    public String shortenURL(String url) {
         if (url.startsWith("https://")) url = url.substring(8);
         else url = url.substring(7);
         if(url.contains("/")) url = url.substring(0, url.indexOf("/"));
+        return url;
+    }
+
+    public void registerVisit(String url) {
 
         if(visitedAddresses.containsKey(url)) {
-            Double nv = visitedAddresses.get(url);
+            Long nv = visitedAddresses.get(url);
             nv++;
             visitedAddresses.replace(url, nv);
         } else {
-            visitedAddresses.put(url, Double.valueOf(1));
+            visitedAddresses.put(url, (long) 1);
         }
 
     }
 
     public void loadPage(String url) {
 
-        registerVisit(url);
+     //   registerVisit(url);
         Platform.runLater(() -> view.getEngine().load(url));
 
     }
