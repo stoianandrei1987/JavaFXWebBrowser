@@ -36,7 +36,7 @@ public class IOClass {
             if (!json2.exists()) json2.createNewFile();
             if (!properties.exists()) {
                 if (properties.createNewFile()) {
-                    writeStringToFile("incognito=true", properties.getCanonicalPath());
+                    writeStringToFile("incognito=false", properties.getCanonicalPath());
                 }
 
 
