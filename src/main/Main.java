@@ -1,11 +1,10 @@
 package main;
 
-import com.google.gson.Gson;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
@@ -53,6 +52,8 @@ public class Main extends Application {
 
     public void initialize() {
 
+
+        IOClass.createJSONS();
         backForwardIndex = -1;
         backForwardList = new ArrayList<>();
         backForwardWasPressed = false;
@@ -61,6 +62,7 @@ public class Main extends Application {
         view = new WebView();
         currentThread().setPriority(6);
 
+
         Runnable writeThings = () -> {
             IOClass.writeAddresses(visitedAddresses);
             IOClass.writeHistory(historyItemObservableList);
@@ -68,7 +70,7 @@ public class Main extends Application {
 
         if(incognitoMode == false) {
             ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-            service.scheduleWithFixedDelay(writeThings, 0, 60, TimeUnit.SECONDS);
+            service.scheduleWithFixedDelay(writeThings, 10, 10, TimeUnit.SECONDS);
         }
 
     }
