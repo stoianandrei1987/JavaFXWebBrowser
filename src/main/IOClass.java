@@ -10,6 +10,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class IOClass {
@@ -28,16 +29,36 @@ public class IOClass {
         if (!jfdir.exists()) jfdir.mkdirs();
         File json1 = new File(pathToVisists);
         File json2 = new File(pathToHistory);
+        File properties = new File(pathToDir + "\\application.properties");
 
         try {
             if (!json1.exists()) json1.createNewFile();
             if (!json2.exists()) json2.createNewFile();
+            if (!properties.exists()) {
+                if (properties.createNewFile()) {
+                    writeStringToFile("incognito=true", properties.getCanonicalPath());
+                }
+
+
+            }
             pathToVisists = json1.getCanonicalPath();
             pathToHistory = json2.getCanonicalPath();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+    }
+
+    public static boolean getIncognito() {
+        Properties p = new Properties();
+        try {
+            p.load(new FileReader(pathToDir + "\\application.properties"));
+            if (p.getProperty("incognito").equals("true")) return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     public static Map<String, Long> getAddresses() {

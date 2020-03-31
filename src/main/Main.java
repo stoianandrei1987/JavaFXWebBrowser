@@ -46,7 +46,7 @@ public class Main extends Application {
     private List<HistoryItem> backForwardList;
     private int backForwardIndex;
     private boolean backForwardWasPressed = false;
-    private boolean incognitoMode = false;
+    private boolean incognitoMode;
     private Map<String, Long> visitedAddresses = new HashMap<>();
 
 
@@ -57,6 +57,7 @@ public class Main extends Application {
         backForwardIndex = -1;
         backForwardList = new ArrayList<>();
         backForwardWasPressed = false;
+        incognitoMode = IOClass.getIncognito();
         historyItemObservableList = IOClass.getHistory();
         visitedAddresses = IOClass.getAddresses();
         view = new WebView();
@@ -70,7 +71,7 @@ public class Main extends Application {
 
         if(incognitoMode == false) {
             ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-            service.scheduleWithFixedDelay(writeThings, 10, 10, TimeUnit.SECONDS);
+            service.scheduleWithFixedDelay(writeThings, 15, 60, TimeUnit.SECONDS);
         }
 
     }
