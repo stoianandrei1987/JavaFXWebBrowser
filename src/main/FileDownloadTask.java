@@ -7,7 +7,9 @@ import javafx.scene.control.Alert;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -16,24 +18,29 @@ import java.io.OutputStream;
 
 public class FileDownloadTask extends Task<File> {
 
+
     private static final int DEFAULT_BUFFER_SIZE = 1024;
 
     private HttpClient httpClient;
     private String remoteUrl;
     private File localFile;
     private int bufferSize;
+    private String taskID;
 
-    public FileDownloadTask(String remoteUrl, File localFile)
+    public FileDownloadTask(String remoteUrl, File localFile, String taskID)
     {
-        this(new DefaultHttpClient(), remoteUrl, localFile, DEFAULT_BUFFER_SIZE);
+        this(HttpClients.custom().setConnectionManager(HttpCManager.getCm()).
+                build(), remoteUrl, localFile, taskID, DEFAULT_BUFFER_SIZE);
     }
 
-    public FileDownloadTask(HttpClient httpClient, String remoteUrl, File localFile, int bufferSize)
+    public FileDownloadTask(HttpClient httpClient, String remoteUrl, File localFile, String taskID, int bufferSize)
     {
         this.httpClient = httpClient;
         this.remoteUrl = remoteUrl;
         this.localFile = localFile;
         this.bufferSize = bufferSize;
+        this.taskID = taskID;
+
 
         stateProperty().addListener(new ChangeListener<State>()
         {
@@ -60,6 +67,18 @@ public class FileDownloadTask extends Task<File> {
                 }
             }
         });
+    }
+
+    public String getRemoteUrl() {
+        return remoteUrl;
+    }
+
+    public File getLocalFile() {
+        return localFile;
+    }
+
+    public String getTaskID() {
+        return taskID;
     }
 
     protected File call() throws Exception
@@ -96,7 +115,5 @@ public class FileDownloadTask extends Task<File> {
             }
         }
     }
-
-
 
 }

@@ -74,16 +74,25 @@ public class Main extends Application {
         incognitoMode = IOClass.getIncognito();
         historyItemObservableList = IOClass.getHistory();
         visitedAddresses = IOClass.getAddresses();
+        HttpCManager.createCmanager();
         view = new WebView();
         numThreadsDownloading.addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                if (oldValue.intValue() >= 1 && newValue.intValue() == 0) {
+
+                if (newValue.intValue() == 0) {
+                    System.out.println("number of threads now zero");
                     bindProgressBarNormally();
                     progressBarBoundToThread = false;
-                } else if (newValue.intValue() > oldValue.intValue()) { }
+                } else if (newValue.intValue() > oldValue.intValue()) {
+                    System.out.println("increase in download threads");
+                }
                 else {
-                    bindPbToDownloadTask(downloads.stream().filter(task -> task.isRunning()).findFirst().get());
+                    System.out.println("decrease in download threads");
+                    System.out.println("switching pb to diff thread : "+downloads.stream().
+                            filter(task->((!task.isDone()) && !task.isCancelled())).findFirst().get().getTaskID());
+                    bindPbToDownloadTask(downloads.stream().filter(task -> (!task.isDone()) && (!task.isCancelled())).
+                            findFirst().get());
                 }
             }
         });
@@ -96,6 +105,7 @@ public class Main extends Application {
             IOClass.writeHistory(historyItemObservableList);
         };
 
+        //changed made for test
         if (incognitoMode == false) {
             ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
             service.scheduleWithFixedDelay(writeThings, 15, 60, TimeUnit.SECONDS);
@@ -297,14 +307,20 @@ public class Main extends Application {
         for (String ext : downloadableExtensions) {
             if (newValue.endsWith(ext)) {
                 //begin download
-                System.out.println("This is downloadable");
+
                 FileChooser chooser = new FileChooser();
                 chooser.setInitialFileName(newValue.substring(newValue.lastIndexOf("/") + 1));
                 File file = chooser.showSaveDialog(primaryStageCopy);
                 if (file != null) {
-                    FileDownloadTask fileDownloadTask = new FileDownloadTask(newValue, file);
-                    downloads.add(fileDownloadTask);
+
                     numThreadsDownloading.set(numThreadsDownloading.get() + 1);
+                    String taskID = "DOWNLOAD" + (downloads.size() + 1);
+                    FileDownloadTask fileDownloadTask = new FileDownloadTask(newValue, file, taskID);
+
+                    downloads.add(fileDownloadTask);
+
+
+                    System.out.println("Num threads downloading : " + numThreadsDownloading.get() );
                     if (!progressBarBoundToThread) {
                         bindPbToDownloadTask(fileDownloadTask);
                         progressBarBoundToThread = true;
@@ -318,6 +334,7 @@ public class Main extends Application {
     }
 
     public void bindPbToDownloadTask(FileDownloadTask fileDownloadTask) {
+        System.out.println("Binding progress bar to : "+fileDownloadTask.getTaskID());
         loadLabel.setText("Downloading file!          ");
         progressBar.progressProperty().bind(fileDownloadTask.progressProperty());
         bottomHBox.visibleProperty().bind(fileDownloadTask.runningProperty());
