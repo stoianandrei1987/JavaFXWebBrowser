@@ -101,7 +101,6 @@ public class IOClass {
 
     private static String readStringFromFile(String filename) {
 
-
         try {
             BufferedReader reader = new BufferedReader(new FileReader(filename));
             return reader.lines()

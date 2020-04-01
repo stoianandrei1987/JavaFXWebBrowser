@@ -3,9 +3,15 @@ package main;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableIntegerValue;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -21,11 +27,13 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -48,10 +56,16 @@ public class Main extends Application {
     private boolean backForwardWasPressed = false;
     private boolean incognitoMode;
     private Map<String, Long> visitedAddresses = new HashMap<>();
+    private ProgressBar progressBar = new ProgressBar();
+    private HBox bottomHBox = new HBox();
+    private Label loadLabel = new Label();
+    private Stage primaryStageCopy;
+    private static SimpleIntegerProperty numThreadsDownloading = new SimpleIntegerProperty(0);
+    private List<FileDownloadTask> downloads = new ArrayList<>();
+    private boolean progressBarBoundToThread = false;
 
 
     public void initialize() {
-
 
         IOClass.createJSONS();
         backForwardIndex = -1;
@@ -61,6 +75,19 @@ public class Main extends Application {
         historyItemObservableList = IOClass.getHistory();
         visitedAddresses = IOClass.getAddresses();
         view = new WebView();
+        numThreadsDownloading.addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                if (oldValue.intValue() >= 1 && newValue.intValue() == 0) {
+                    bindProgressBarNormally();
+                    progressBarBoundToThread = false;
+                } else if (newValue.intValue() > oldValue.intValue()) { }
+                else {
+                    bindPbToDownloadTask(downloads.stream().filter(task -> task.isRunning()).findFirst().get());
+                }
+            }
+        });
+
         currentThread().setPriority(6);
 
 
@@ -69,7 +96,7 @@ public class Main extends Application {
             IOClass.writeHistory(historyItemObservableList);
         };
 
-        if(incognitoMode == false) {
+        if (incognitoMode == false) {
             ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
             service.scheduleWithFixedDelay(writeThings, 15, 60, TimeUnit.SECONDS);
         }
@@ -80,6 +107,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
 
         initialize();
+        primaryStageCopy = primaryStage;
         primaryStage.setTitle("Web Browser");
 
         Platform.runLater(() ->
@@ -96,12 +124,9 @@ public class Main extends Application {
         r3.setMinHeight(20);
         r3.setMaxHeight(20);
 
-        Label loadLabel = new Label("Loading. Please Wait!   ");
-        ProgressBar progressBar = new ProgressBar();
         loadLabel.setMinWidth(79);
         progressBar.setMinWidth(500);
         progressBar.setMaxSize(Double.MAX_VALUE, 20);
-        HBox bottomHBox = new HBox();
 
         view.getEngine().titleProperty().addListener(new ChangeListener<String>() {
             @Override
@@ -132,21 +157,25 @@ public class Main extends Application {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
 
+
                 currItem = new HistoryItem();
                 currItem.setUri(newValue);
                 textField.setText(newValue);
-                if(oldValue!=null && !shortenURL(oldValue).equals(shortenURL(newValue)))
+                if (oldValue != null && !shortenURL(oldValue).equals(shortenURL(newValue)))
                     registerVisit(shortenURL(newValue));
-
-
 
             }
         });
 
+        view.getEngine().getLoadWorker().stateProperty().addListener(new ChangeListener<Worker.State>() {
+            @Override
+            public void changed(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
+                if (oldValue.toString().equals("RUNNING") && newValue.toString().equals("CANCELLED"))
+                    tryDownload(view.getEngine().getLocation());
+            }
+        });
 
-        progressBar.progressProperty().bind(view.getEngine().getLoadWorker().progressProperty());
-        bottomHBox.visibleProperty().bind(view.getEngine().getLoadWorker().runningProperty());
-
+        bindProgressBarNormally();
         bottomHBox.setPadding(new Insets(5, 0, 5, 30));
 
         bottomHBox.setAlignment(Pos.CENTER_LEFT);
@@ -228,7 +257,7 @@ public class Main extends Application {
                 Comparator<String> stringComparator = new Comparator<String>() {
                     @Override
                     public int compare(String o1, String o2) {
-                        if((visitedAddresses.get(o1) - visitedAddresses.get(o2)) > 0) return -1;
+                        if ((visitedAddresses.get(o1) - visitedAddresses.get(o2)) > 0) return -1;
                         else return 1;
                     }
                 };
@@ -254,8 +283,8 @@ public class Main extends Application {
         primaryStage.show();
         primaryStage.setOnCloseRequest((e) -> {
 
-      //      IOClass.writeAddresses(visitedAddresses);
-      //      IOClass.writeHistory(historyItemObservableList);
+            //      IOClass.writeAddresses(visitedAddresses);
+            //      IOClass.writeHistory(historyItemObservableList);
 
             Platform.exit();
             System.exit(0);
@@ -263,6 +292,48 @@ public class Main extends Application {
         });
     }
 
+    private boolean tryDownload(String newValue) {
+        String[] downloadableExtensions = {".doc", ".xls", ".zip", ".exe", ".rar", ".pdf", ".jar", ".png", ".jpg", ".gif"};
+        for (String ext : downloadableExtensions) {
+            if (newValue.endsWith(ext)) {
+                //begin download
+                System.out.println("This is downloadable");
+                FileChooser chooser = new FileChooser();
+                chooser.setInitialFileName(newValue.substring(newValue.lastIndexOf("/") + 1));
+                File file = chooser.showSaveDialog(primaryStageCopy);
+                if (file != null) {
+                    FileDownloadTask fileDownloadTask = new FileDownloadTask(newValue, file);
+                    downloads.add(fileDownloadTask);
+                    numThreadsDownloading.set(numThreadsDownloading.get() + 1);
+                    if (!progressBarBoundToThread) {
+                        bindPbToDownloadTask(fileDownloadTask);
+                        progressBarBoundToThread = true;
+                    }
+                    new Thread(fileDownloadTask).start();
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void bindPbToDownloadTask(FileDownloadTask fileDownloadTask) {
+        loadLabel.setText("Downloading file!          ");
+        progressBar.progressProperty().bind(fileDownloadTask.progressProperty());
+        bottomHBox.visibleProperty().bind(fileDownloadTask.runningProperty());
+    }
+
+
+    public void bindProgressBarNormally() {
+
+        loadLabel.setText("Loading! Please wait!     ");
+        progressBar.progressProperty().bind(view.getEngine().getLoadWorker().progressProperty());
+        bottomHBox.visibleProperty().bind(view.getEngine().getLoadWorker().runningProperty());
+    }
+
+    public static void decreaseNumDownloadThreads() {
+        numThreadsDownloading.set(numThreadsDownloading.get() - 1);
+    }
 
 
     public static void main(String[] args) {
@@ -327,13 +398,13 @@ public class Main extends Application {
     public String shortenURL(String url) {
         if (url.startsWith("https://")) url = url.substring(8);
         else url = url.substring(7);
-        if(url.contains("/")) url = url.substring(0, url.indexOf("/"));
+        if (url.contains("/")) url = url.substring(0, url.indexOf("/"));
         return url;
     }
 
     public void registerVisit(String url) {
 
-        if(visitedAddresses.containsKey(url)) {
+        if (visitedAddresses.containsKey(url)) {
             Long nv = visitedAddresses.get(url);
             nv++;
             visitedAddresses.replace(url, nv);
@@ -345,7 +416,7 @@ public class Main extends Application {
 
     public void loadPage(String url) {
 
-     //   registerVisit(url);
+        //   registerVisit(url);
         Platform.runLater(() -> view.getEngine().load(url));
 
     }
