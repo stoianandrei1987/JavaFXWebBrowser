@@ -4,13 +4,9 @@ package main;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableIntegerValue;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
@@ -74,7 +70,7 @@ public class Main extends Application {
         incognitoMode = IOClass.getIncognito();
         historyItemObservableList = IOClass.getHistory();
         visitedAddresses = IOClass.getAddresses();
-        HttpCManager.createCmanager();
+        HttpCManager.initialize();
         view = new WebView();
         numThreadsDownloading.addListener(new ChangeListener<Number>() {
             @Override

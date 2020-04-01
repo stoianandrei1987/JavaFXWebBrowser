@@ -29,8 +29,7 @@ public class FileDownloadTask extends Task<File> {
 
     public FileDownloadTask(String remoteUrl, File localFile, String taskID)
     {
-        this(HttpClients.custom().setConnectionManager(HttpCManager.getCm()).
-                build(), remoteUrl, localFile, taskID, DEFAULT_BUFFER_SIZE);
+        this(HttpCManager.getClient(), remoteUrl, localFile, taskID, DEFAULT_BUFFER_SIZE);
     }
 
     public FileDownloadTask(HttpClient httpClient, String remoteUrl, File localFile, String taskID, int bufferSize)
