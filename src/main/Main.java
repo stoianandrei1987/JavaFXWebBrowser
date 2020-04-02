@@ -3,6 +3,7 @@ package main;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -12,24 +13,31 @@ import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import org.apache.http.Header;
+import org.apache.http.client.methods.HttpGet;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.events.EventTarget;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -59,6 +67,8 @@ public class Main extends Application {
     private static SimpleIntegerProperty numThreadsDownloading = new SimpleIntegerProperty(0);
     private List<FileDownloadTask> downloads = new ArrayList<>();
     private boolean progressBarBoundToThread = false;
+    private boolean mouseOverImage = false;
+    private String mouseOverImageSrc = "";
 
 
     public void initialize() {
@@ -72,6 +82,8 @@ public class Main extends Application {
         visitedAddresses = IOClass.getAddresses();
         HttpCManager.initialize();
         view = new WebView();
+        view.setContextMenuEnabled(false);
+        createContextMenu(view);
         numThreadsDownloading.addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
@@ -176,6 +188,38 @@ public class Main extends Application {
         view.getEngine().getLoadWorker().stateProperty().addListener(new ChangeListener<Worker.State>() {
             @Override
             public void changed(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
+                if(newValue.toString().equals("SUCCEEDED")) {
+
+                    org.w3c.dom.events.EventListener mouseOverEventListener = new org.w3c.dom.events.EventListener() {
+                        @Override
+                        public void handleEvent(org.w3c.dom.events.Event evt) {
+                            String src = ((Element) evt.getTarget()).getAttribute("src");
+                            mouseOverImage = true;
+                            mouseOverImageSrc  = src;
+                            System.out.println("Mouse over image : "+mouseOverImageSrc);
+
+                        }
+                    };
+
+
+                    org.w3c.dom.events.EventListener mouseOutEventListener = new org.w3c.dom.events.EventListener() {
+                        @Override
+                        public void handleEvent(org.w3c.dom.events.Event evt) {
+                            mouseOverImage = false;
+                            mouseOverImageSrc = "";
+                        }
+
+                    };
+
+                    Document document = view.getEngine().getDocument();
+                    NodeList nodeList = document.getElementsByTagName("img");
+                    for(int i = 0; i<nodeList.getLength(); i++) {
+                        ((EventTarget) nodeList.item(i)).addEventListener("mouseover",mouseOverEventListener,false);
+                        ((EventTarget) nodeList.item(i)).addEventListener("mouseout",mouseOutEventListener,false);
+                    }
+
+                }
+
                 if (oldValue.toString().equals("RUNNING") && newValue.toString().equals("CANCELLED"))
                     tryDownload(view.getEngine().getLocation());
             }
@@ -200,7 +244,10 @@ public class Main extends Application {
         Button backBtn = new Button(),
                 forwBtn = new Button(),
                 stopBtn = new Button(),
-                reloadBtn = new Button();
+                reloadBtn = new Button(),
+                downloadsBtn = new Button(),
+                menuBtn = new Button(),
+                historyBtn = new Button();
 
         Image backIcon = new Image(getClass().getResourceAsStream("/icons/back.png"));
         backBtn.setGraphic(new ImageView(backIcon));
@@ -214,7 +261,16 @@ public class Main extends Application {
         Image reloadIcon = new Image(getClass().getResourceAsStream("/icons/reload.png"));
         reloadBtn.setGraphic(new ImageView(reloadIcon));
 
-        for (Button b : Arrays.asList(backBtn, forwBtn, stopBtn, reloadBtn)) {
+        Image historyIcon = new Image(getClass().getResourceAsStream("/icons/history.png"));
+        historyBtn.setGraphic(new ImageView(historyIcon));
+
+        Image downloadsIcon = new Image(getClass().getResourceAsStream("/icons/downloads.png"));
+        downloadsBtn.setGraphic(new ImageView(downloadsIcon));
+
+        Image menuIcon = new Image(getClass().getResourceAsStream("/icons/menu.png"));
+        menuBtn.setGraphic(new ImageView(menuIcon));
+
+        for (Button b : Arrays.asList(backBtn, forwBtn, stopBtn, reloadBtn, historyBtn, downloadsBtn, menuBtn)) {
             b.getStyleClass().add("upper-btns");
         }
 
@@ -274,7 +330,14 @@ public class Main extends Application {
         });
 
         textField.setOnKeyPressed(textFieldHandler);
-        upperHBox.getChildren().addAll(backBtn, forwBtn, stopBtn, reloadBtn, textField);
+        //menuBtn.setAlignment(Pos.CENTER_RIGHT);
+        primaryStage.widthProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                textField.setPrefWidth(newValue.doubleValue()*0.77);
+            }
+        });
+        upperHBox.getChildren().addAll(backBtn, forwBtn, stopBtn, reloadBtn, textField, historyBtn, downloadsBtn, menuBtn);
         GridPane.setConstraints(upperHBox, 0, 0, 1, 1);
         textField.setMinWidth(500);
         g.getChildren().add(upperHBox);
@@ -298,10 +361,53 @@ public class Main extends Application {
         });
     }
 
+    private void createContextMenu(WebView webView) {
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem reload = new MenuItem("Reload");
+        reload.setOnAction(e -> webView.getEngine().reload());
+        MenuItem savePage = new MenuItem("Save Page");
+        savePage.setOnAction(e -> System.out.println("Trying save page..."));
+
+        MenuItem saveImage = new MenuItem("Save Image");
+        saveImage.setOnAction(e -> System.out.println("Trying image..."));
+
+        MenuItem viewSource = new MenuItem("View Source");
+        viewSource.setOnAction(e -> System.out.println("Trying view source..."));
+
+        contextMenu.getItems().addAll(reload, savePage, viewSource);
+
+        webView.setOnMousePressed(e -> {
+            if (e.getButton() == MouseButton.SECONDARY) {
+                if(mouseOverImage) contextMenu.getItems().add(saveImage);
+                contextMenu.show(webView, e.getScreenX(), e.getScreenY());
+            } else {
+                contextMenu.getItems().remove(saveImage);
+                contextMenu.hide();
+            }
+        });
+    }
+
     private boolean tryDownload(String newValue) {
-        String[] downloadableExtensions = {".doc", ".xls", ".zip", ".exe", ".rar", ".pdf", ".jar", ".png", ".jpg", ".gif"};
-        for (String ext : downloadableExtensions) {
-            if (newValue.endsWith(ext)) {
+
+        String cd = "";
+        /*
+        try {
+            Header cdh = HttpCManager.getClient().
+                    execute(new HttpGet(newValue)).getFirstHeader("Content-Disposition");
+            if(cdh!=null) cd = cdh.getValue();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if(!cd.equals("")) {
+            System.out.println("Content-Disposition : "+cd);
+        } */
+
+        boolean start = false;
+        String[] downloadableExtensions = {".bin",".docx",".doc", ".xls", ".zip", ".exe", ".rar", ".pdf", ".jar", ".png", ".jpg", ".gif"};
+        for(String ext : downloadableExtensions) if (newValue.endsWith(ext)) start = true;
+
+        if(start) {
                 //begin download
 
                 FileChooser chooser = new FileChooser();
@@ -325,9 +431,10 @@ public class Main extends Application {
                 }
                 return true;
             }
-        }
         return false;
-    }
+        }
+
+
 
     public void bindPbToDownloadTask(FileDownloadTask fileDownloadTask) {
         System.out.println("Binding progress bar to : "+fileDownloadTask.getTaskID());
