@@ -8,6 +8,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
@@ -69,6 +70,7 @@ public class Main extends Application {
     private boolean progressBarBoundToThread = false;
     private boolean mouseOverImage = false;
     private String mouseOverImageSrc = "";
+    private FileDownloadTask taskBoundToPb = null;
 
 
     public void initialize() {
@@ -97,17 +99,17 @@ public class Main extends Application {
                 }
                 else {
                     System.out.println("decrease in download threads");
-                    System.out.println("switching pb to diff thread : "+downloads.stream().
-                            filter(task->((!task.isDone()) && !task.isCancelled())).findFirst().get().getTaskID());
-                    bindPbToDownloadTask(downloads.stream().filter(task -> (!task.isDone()) && (!task.isCancelled())).
-                            findFirst().get());
+                    if(taskBoundToPb.isDone()) {
+                        System.out.println("switching pb to diff thread : " + downloads.stream().
+                                filter(task -> ((!task.isDone()) && !task.isCancelled())).findFirst().get().getTaskID());
+                        bindPbToDownloadTask(downloads.stream().filter(task -> (!task.isDone()) && (!task.isCancelled())).
+                                findFirst().get());
+                    }
                 }
             }
         });
 
         currentThread().setPriority(6);
-
-
         Runnable writeThings = () -> {
             IOClass.writeAddresses(visitedAddresses);
             IOClass.writeHistory(historyItemObservableList);
@@ -388,6 +390,10 @@ public class Main extends Application {
     }
 
     private boolean tryDownload(String newValue) {
+        return tryDownload(newValue, true);
+    }
+
+    private boolean tryDownload(String newValue, boolean check) {
 
         String cd = "";
         /*
@@ -404,8 +410,11 @@ public class Main extends Application {
         } */
 
         boolean start = false;
+
         String[] downloadableExtensions = {".bin",".docx",".doc", ".xls", ".zip", ".exe", ".rar", ".pdf", ".jar", ".png", ".jpg", ".gif"};
+        if(check == true)
         for(String ext : downloadableExtensions) if (newValue.endsWith(ext)) start = true;
+        if(check == false) start = true;
 
         if(start) {
                 //begin download
@@ -439,6 +448,7 @@ public class Main extends Application {
     public void bindPbToDownloadTask(FileDownloadTask fileDownloadTask) {
         System.out.println("Binding progress bar to : "+fileDownloadTask.getTaskID());
         loadLabel.setText("Downloading file!          ");
+        taskBoundToPb = fileDownloadTask;
         progressBar.progressProperty().bind(fileDownloadTask.progressProperty());
         bottomHBox.visibleProperty().bind(fileDownloadTask.runningProperty());
     }

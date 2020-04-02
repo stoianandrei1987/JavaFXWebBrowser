@@ -49,7 +49,7 @@ public class FileDownloadTask extends Task<File> {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Success!");
                     alert.setHeaderText(null);
-                    alert.setContentText("Download succeeded!");
+                    alert.setContentText("Succeeded downloading "+localFile.getName()+" !");
 
                     alert.showAndWait();
                 }
@@ -59,7 +59,7 @@ public class FileDownloadTask extends Task<File> {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error!");
                     alert.setHeaderText(null);
-                    alert.setContentText("Download failed!");
+                    alert.setContentText("Failed downloading "+localFile.getName()+" !");
                     alert.showAndWait();
                 }
             }
