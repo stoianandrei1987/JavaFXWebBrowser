@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.shape.Polygon?>
+<GridPane alignment="center" hgap="10" minHeight="450.0" minWidth="360.0" prefHeight="450.0" prefWidth="360.0" vgap="10" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.HistoryController">
+   <children>
+
+       <Polygon fx:id="leftArrow" GridPane.rowIndex="0" GridPane.rowSpan="1" GridPane.columnSpan="1" GridPane.columnIndex="0"></Polygon>
+       <Label GridPane.columnIndex="1" GridPane.columnSpan="1" GridPane.rowIndex="0" GridPane.rowSpan="1">
+           31 decembrie 2019
+       </Label>
+       <Polygon fx:id="rightArrow" GridPane.columnIndex="2" GridPane.columnSpan="1" GridPane.rowIndex="0" GridPane.rowSpan="1"></Polygon>
+
+       <ListView GridPane.rowIndex="1" GridPane.rowSpan="1" minWidth="320"  minHeight="270" translateY="-20"
+       GridPane.columnSpan="1" GridPane.columnIndex="1">
+
+       </ListView>
+       <GridPane GridPane.rowIndex="2" GridPane.rowSpan="1" translateY="17" alignment="CENTER" GridPane.columnIndex="0"
+                 GridPane.columnSpan="3">
+           <children>
+               <Button mnemonicParsing="false" prefWidth="75" text="Visit" translateX="0" fx:id="visitBtn" onAction="#visitPressed"/>
+               <Button mnemonicParsing="false" prefWidth="75" text="Remove" translateX="-100" fx:id="removeBtn"/>
+               <Button mnemonicParsing="false" prefWidth="75" text="Remove all" translateX="100" fx:id="removeAllBtn"/>
+           </children>
+       </GridPane>
+
+
+   </children>
+   <columnConstraints>
+       <ColumnConstraints percentWidth="25" halignment="CENTER"/>
+       <ColumnConstraints percentWidth="50" halignment="CENTER"/>
+       <ColumnConstraints percentWidth="25" halignment="CENTER"/>
+
+      <ColumnConstraints />
+   </columnConstraints>
+   <rowConstraints>
+       <RowConstraints percentHeight="30"/>
+       <RowConstraints percentHeight="50"/>
+       <RowConstraints percentHeight="20"/>
+   </rowConstraints>
+</GridPane>

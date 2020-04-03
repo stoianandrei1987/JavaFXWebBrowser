@@ -305,6 +305,14 @@ public class Main extends Application {
             loadPage(backForwardList.get(backForwardIndex).getUri());
         });
 
+        downloadsBtn.setOnAction(event -> {
+            new DownloadsController().createWindow();
+        });
+
+        historyBtn.setOnAction(event -> {
+            new HistoryController().createWindow();
+        });
+
         HBox upperHBox = new HBox();
         upperHBox.setAlignment(Pos.CENTER_LEFT);
         upperHBox.setSpacing(20);
