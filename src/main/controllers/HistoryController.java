@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.shape.Polygon;
 import javafx.scene.text.Font;
@@ -16,8 +17,12 @@ import main.HistoryItem;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
@@ -25,6 +30,7 @@ import java.util.stream.Collectors;
 public class HistoryController extends Controller implements Initializable {
 
     private LocalDateTime searchDate;
+    private Map<Integer, HistoryItem> listViewItemsMap = new HashMap<>();
 
     @FXML
     javafx.scene.control.ListView historyList;
@@ -39,21 +45,30 @@ public class HistoryController extends Controller implements Initializable {
 
     @FXML
     public void visitPressed(ActionEvent event) {
+        if(historyList.getSelectionModel().getSelectedItem()!=null) {
+            main.Main.loadPage(listViewItemsMap.get(historyList.getSelectionModel().getSelectedIndex()).getUri());
+            windowIsCreated = false;
+            window.close();
 
+        }
     }
 
     public boolean checkSameDate(LocalDateTime ldt1, LocalDateTime ldt2) {
-        if(ldt1.getDayOfYear()==ldt2.getDayOfYear() && ldt1.getMonthValue()==ldt2.getMonthValue() &&
-        ldt1.getYear()==ldt2.getYear()) return true;
+        if(ldt1.toLocalDate().equals(ldt2.toLocalDate())) return true;
         return false;
     }
 
     public void fillList(LocalDateTime ldt){
+        listViewItemsMap.clear();
+        historyList.getItems().clear();
         List<HistoryItem> lhi = main.Main.getHList().stream().
                 filter(item -> {return checkSameDate(item.getCreatedAt(), ldt);}).
                 collect(Collectors.toList());
-   //     dateLabel.setText(new SimpleDateFormat("dd-MM-yyyy").format(searchDate));
+        dateLabel.setText(ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        int count = -1;
         for(HistoryItem hi : lhi) {
+            count++;
+            listViewItemsMap.put(count, hi);
             historyList.getItems().add(hi.getTitle());
         }
     }
@@ -76,6 +91,26 @@ public class HistoryController extends Controller implements Initializable {
         *
          */
 
+    }
+
+    public void leftArrowClicked(MouseEvent mouseEvent) {
+        searchDate = searchDate.minusDays(1);
+        fillList(searchDate);
+    }
+
+    public void rightArrowClicked(MouseEvent mouseEvent) {
+        if(searchDate.toLocalDate().isBefore(LocalDate.now())) searchDate = searchDate.plusDays(1);
+        fillList(searchDate);
+    }
+
+    public void closePressed(ActionEvent event) {
+        windowIsCreated = false;
+        window.close();
+    }
+
+    public void removePressed(ActionEvent event)
+    {
+        System.out.println("Remove : " + historyList.getSelectionModel().getSelectedIndex());
     }
 }
 

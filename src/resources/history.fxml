@@ -8,7 +8,7 @@
 <GridPane fx:id="gridPane" stylesheets="stylesheet.css" styleClass="history-grid-pane" alignment="center" hgap="10" minHeight="450.0" minWidth="360.0" prefHeight="450.0" prefWidth="360.0" vgap="10" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.controllers.HistoryController">
    <children>
 
-       <Polygon fx:id="leftArrow" styleClass="history-arrow" GridPane.rowIndex="0" GridPane.rowSpan="1" GridPane.columnSpan="1" GridPane.columnIndex="0">
+       <Polygon fx:id="leftArrow" styleClass="history-arrow" GridPane.rowIndex="0" GridPane.rowSpan="1" GridPane.columnSpan="1" GridPane.columnIndex="0" onMouseClicked="#leftArrowClicked">
            <points>
                <Double fx:value="0.0"/>
                <Double fx:value="-20.0"/>
@@ -21,7 +21,8 @@
        <Label fx:id="dateLabel" GridPane.columnIndex="1" GridPane.columnSpan="1" GridPane.rowIndex="0" GridPane.rowSpan="1">
            31 decembrie 2019
        </Label>
-       <Polygon fx:id="rightArrow" styleClass="history-arrow" GridPane.columnIndex="2" GridPane.columnSpan="1" GridPane.rowIndex="0" GridPane.rowSpan="1">
+       <Polygon fx:id="rightArrow" styleClass="history-arrow" GridPane.columnIndex="2" GridPane.columnSpan="1" GridPane.rowIndex="0" GridPane.rowSpan="1"
+       onMouseClicked="#rightArrowClicked">
            <points>
                <Double fx:value="0.0"/>
                <Double fx:value="-20.0"/>
@@ -40,8 +41,8 @@
                  GridPane.columnSpan="3">
            <children>
                <Button mnemonicParsing="false" styleClass="history-btn" prefWidth="75" text="Visit" translateX="0" fx:id="visitBtn" onAction="#visitPressed"/>
-               <Button mnemonicParsing="false" styleClass="history-btn" prefWidth="75" text="Remove" translateX="-100" fx:id="removeBtn"/>
-               <Button mnemonicParsing="false" styleClass="history-btn" prefWidth="75" text="Close" translateX="100" fx:id="removeAllBtn"/>
+               <Button mnemonicParsing="false" styleClass="history-btn" prefWidth="75" text="Remove" translateX="-100" fx:id="removeBtn" onAction="#removePressed"/>
+               <Button mnemonicParsing="false" styleClass="history-btn" prefWidth="75" text="Close" translateX="100" fx:id="closeBtn" onAction="#closePressed"/>
            </children>
        </GridPane>
 

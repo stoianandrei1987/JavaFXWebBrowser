@@ -48,7 +48,7 @@ public class Main extends Application {
 
     private static ObservableList<HistoryItem> historyItemObservableList;
     private Scene myScene;
-    private WebView view;
+    private static WebView view;
     private TextField textField;
     private HistoryItem currItem;
     // private ObservableList<HistoryItem> historyItemObservableList;
@@ -554,7 +554,7 @@ public class Main extends Application {
 
     }
 
-    public void loadPage(String url) {
+    public static void loadPage(String url) {
 
         //   registerVisit(url);
         Platform.runLater(() -> view.getEngine().load(url));
