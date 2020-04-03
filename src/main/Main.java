@@ -3,18 +3,15 @@ package main;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -27,8 +24,8 @@ import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.apache.http.Header;
-import org.apache.http.client.methods.HttpGet;
+import main.controllers.DownloadsController;
+import main.controllers.HistoryController;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.w3c.dom.Document;
@@ -37,8 +34,6 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.events.EventTarget;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -51,11 +46,12 @@ import static java.lang.Thread.currentThread;
 
 public class Main extends Application {
 
+    private static ObservableList<HistoryItem> historyItemObservableList;
     private Scene myScene;
     private WebView view;
     private TextField textField;
     private HistoryItem currItem;
-    private ObservableList<HistoryItem> historyItemObservableList;
+    // private ObservableList<HistoryItem> historyItemObservableList;
     private List<HistoryItem> backForwardList;
     private int backForwardIndex;
     private boolean backForwardWasPressed = false;
@@ -121,6 +117,10 @@ public class Main extends Application {
             service.scheduleWithFixedDelay(writeThings, 15, 60, TimeUnit.SECONDS);
         }
 
+    }
+
+    public static ObservableList<HistoryItem> getHList() {
+        return historyItemObservableList;
     }
 
     @Override
@@ -304,6 +304,8 @@ public class Main extends Application {
         reloadBtn.setOnAction(event -> {
             loadPage(backForwardList.get(backForwardIndex).getUri());
         });
+
+
 
         downloadsBtn.setOnAction(event -> {
             new DownloadsController().createWindow();

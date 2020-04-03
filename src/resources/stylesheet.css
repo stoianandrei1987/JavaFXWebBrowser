@@ -5,3 +5,21 @@
 .upper-btns:hover {
 -fx-background-color: #D9D9D9;
 }
+
+.history-grid-pane {
+-fx-background-color: white;
+}
+
+.history-btn {
+-fx-background-color: black;
+-fx-text-fill: white;
+-fx-font-weight: bold;
+}
+
+.history-btn:hover{
+-fx-background-color: grey;
+}
+
+.history-arrow:hover{
+-fx-fill: grey;
+}
