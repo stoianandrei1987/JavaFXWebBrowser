@@ -26,6 +26,9 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import main.controllers.DownloadsController;
 import main.controllers.HistoryController;
+import main.downloadtasks.Base64DownloadTask;
+import main.downloadtasks.DownloadTask;
+import main.downloadtasks.FileDownloadTask;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.w3c.dom.Document;
@@ -62,11 +65,11 @@ public class Main extends Application {
     private Label loadLabel = new Label();
     private Stage primaryStageCopy;
     private static SimpleIntegerProperty numThreadsDownloading = new SimpleIntegerProperty(0);
-    private List<FileDownloadTask> downloads = new ArrayList<>();
+    private List<DownloadTask> downloads = new ArrayList<>();
     private boolean progressBarBoundToThread = false;
     private boolean mouseOverImage = false;
     private String mouseOverImageSrc = "";
-    private FileDownloadTask taskBoundToPb = null;
+    private DownloadTask taskBoundToPb = null;
 
 
     public void initialize() {
@@ -92,10 +95,9 @@ public class Main extends Application {
                     progressBarBoundToThread = false;
                 } else if (newValue.intValue() > oldValue.intValue()) {
                     System.out.println("increase in download threads");
-                }
-                else {
+                } else {
                     System.out.println("decrease in download threads");
-                    if(taskBoundToPb.isDone()) {
+                    if (taskBoundToPb.isDone()) {
                         System.out.println("switching pb to diff thread : " + downloads.stream().
                                 filter(task -> ((!task.isDone()) && !task.isCancelled())).findFirst().get().getTaskID());
                         bindPbToDownloadTask(downloads.stream().filter(task -> (!task.isDone()) && (!task.isCancelled())).
@@ -190,15 +192,16 @@ public class Main extends Application {
         view.getEngine().getLoadWorker().stateProperty().addListener(new ChangeListener<Worker.State>() {
             @Override
             public void changed(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
-                if(newValue.toString().equals("SUCCEEDED")) {
+                if (newValue.toString().equals("SUCCEEDED")) {
 
                     org.w3c.dom.events.EventListener mouseOverEventListener = new org.w3c.dom.events.EventListener() {
                         @Override
                         public void handleEvent(org.w3c.dom.events.Event evt) {
                             String src = ((Element) evt.getTarget()).getAttribute("src");
+                            src = fixImgSrcURL(src);
                             mouseOverImage = true;
-                            mouseOverImageSrc  = src;
-                            System.out.println("Mouse over image : "+mouseOverImageSrc);
+                            mouseOverImageSrc = src;
+                            System.out.println("Mouse over image : " + mouseOverImageSrc);
 
                         }
                     };
@@ -215,9 +218,9 @@ public class Main extends Application {
 
                     Document document = view.getEngine().getDocument();
                     NodeList nodeList = document.getElementsByTagName("img");
-                    for(int i = 0; i<nodeList.getLength(); i++) {
-                        ((EventTarget) nodeList.item(i)).addEventListener("mouseover",mouseOverEventListener,false);
-                        ((EventTarget) nodeList.item(i)).addEventListener("mouseout",mouseOutEventListener,false);
+                    for (int i = 0; i < nodeList.getLength(); i++) {
+                        ((EventTarget) nodeList.item(i)).addEventListener("mouseover", mouseOverEventListener, false);
+                        ((EventTarget) nodeList.item(i)).addEventListener("mouseout", mouseOutEventListener, false);
                     }
 
                 }
@@ -306,7 +309,6 @@ public class Main extends Application {
         });
 
 
-
         downloadsBtn.setOnAction(event -> {
             new DownloadsController().createWindow();
         });
@@ -346,7 +348,7 @@ public class Main extends Application {
         primaryStage.widthProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                textField.setPrefWidth(newValue.doubleValue()*0.77);
+                textField.setPrefWidth(newValue.doubleValue() * 0.77);
             }
         });
         upperHBox.getChildren().addAll(backBtn, forwBtn, stopBtn, reloadBtn, textField, historyBtn, downloadsBtn, menuBtn);
@@ -374,6 +376,7 @@ public class Main extends Application {
     }
 
     private void createContextMenu(WebView webView) {
+        String[] imgDownloadSrc = new String[1];
         ContextMenu contextMenu = new ContextMenu();
         MenuItem reload = new MenuItem("Reload");
         reload.setOnAction(e -> webView.getEngine().reload());
@@ -381,7 +384,7 @@ public class Main extends Application {
         savePage.setOnAction(e -> System.out.println("Trying save page..."));
 
         MenuItem saveImage = new MenuItem("Save Image");
-        saveImage.setOnAction(e -> System.out.println("Trying image..."));
+        saveImage.setOnAction(e -> tryDownload(imgDownloadSrc[0]));
 
         MenuItem viewSource = new MenuItem("View Source");
         viewSource.setOnAction(e -> System.out.println("Trying view source..."));
@@ -390,7 +393,8 @@ public class Main extends Application {
 
         webView.setOnMousePressed(e -> {
             if (e.getButton() == MouseButton.SECONDARY) {
-                if(mouseOverImage) contextMenu.getItems().add(saveImage);
+                if (mouseOverImage) contextMenu.getItems().add(saveImage);
+                imgDownloadSrc[0] = mouseOverImageSrc;
                 contextMenu.show(webView, e.getScreenX(), e.getScreenY());
             } else {
                 contextMenu.getItems().remove(saveImage);
@@ -400,6 +404,12 @@ public class Main extends Application {
     }
 
     private boolean tryDownload(String newValue) {
+        System.out.println("trying to download : "+ newValue);
+        if(newValue.startsWith("www")) {
+            if(isURL("https://" + newValue)) newValue ="https://" + newValue;
+                else newValue = "http://" + newValue;
+        }
+
         return tryDownload(newValue, true);
     }
 
@@ -420,43 +430,47 @@ public class Main extends Application {
         } */
 
         boolean start = false;
+        boolean base64 = false;
 
-        String[] downloadableExtensions = {".bin",".docx",".doc", ".xls", ".zip", ".exe", ".rar", ".pdf", ".jar", ".png", ".jpg", ".gif"};
-        if(check == true)
-        for(String ext : downloadableExtensions) if (newValue.endsWith(ext)) start = true;
-        if(check == false) start = true;
-
-        if(start) {
-                //begin download
-
-                FileChooser chooser = new FileChooser();
-                chooser.setInitialFileName(newValue.substring(newValue.lastIndexOf("/") + 1));
-                File file = chooser.showSaveDialog(primaryStageCopy);
-                if (file != null) {
-
-                    numThreadsDownloading.set(numThreadsDownloading.get() + 1);
-                    String taskID = "DOWNLOAD" + (downloads.size() + 1);
-                    FileDownloadTask fileDownloadTask = new FileDownloadTask(newValue, file, taskID);
-
-                    downloads.add(fileDownloadTask);
-
-
-                    System.out.println("Num threads downloading : " + numThreadsDownloading.get() );
-                    if (!progressBarBoundToThread) {
-                        bindPbToDownloadTask(fileDownloadTask);
-                        progressBarBoundToThread = true;
-                    }
-                    new Thread(fileDownloadTask).start();
-                }
-                return true;
-            }
-        return false;
+        String[] downloadableExtensions = {".gif", ".bin", ".docx", ".doc", ".xls", ".zip", ".exe", ".rar", ".pdf", ".jar", ".png", ".jpg", ".gif"};
+        if (check == true) {
+            for (String ext : downloadableExtensions) if (newValue.endsWith(ext)) start = true;
+            if(newValue.startsWith("data:image")) { start = true; base64 = true;}
         }
+        if (check == false) start = true;
+
+        if (start) {
+            //begin download
+
+            FileChooser chooser = new FileChooser();
+            if(!base64) chooser.setInitialFileName(newValue.substring(newValue.lastIndexOf("/") + 1));
+            else chooser.setInitialFileName("base64image."+newValue.split(";")[0].split("/")[1]);
+            File file = chooser.showSaveDialog(primaryStageCopy);
+            if (file != null) {
+
+                numThreadsDownloading.set(numThreadsDownloading.get() + 1);
+                String taskID = "DOWNLOAD" + (downloads.size() + 1);
+                DownloadTask fileDownloadTask =
+                        base64 ? new Base64DownloadTask(newValue, file) : new FileDownloadTask(newValue, file, taskID);
+
+                downloads.add(fileDownloadTask);
 
 
+                System.out.println("Num threads downloading : " + numThreadsDownloading.get());
+                if (!progressBarBoundToThread) {
+                    bindPbToDownloadTask(fileDownloadTask);
+                    progressBarBoundToThread = true;
+                }
+                new Thread(fileDownloadTask).start();
+            }
+            return true;
+        }
+        return false;
+    }
 
-    public void bindPbToDownloadTask(FileDownloadTask fileDownloadTask) {
-        System.out.println("Binding progress bar to : "+fileDownloadTask.getTaskID());
+
+    public void bindPbToDownloadTask(DownloadTask fileDownloadTask) {
+        System.out.println("Binding progress bar to : " + fileDownloadTask.getTaskID());
         loadLabel.setText("Downloading file!          ");
         taskBoundToPb = fileDownloadTask;
         progressBar.progressProperty().bind(fileDownloadTask.progressProperty());
@@ -525,6 +539,32 @@ public class Main extends Application {
 
         }
     };
+
+    private String fixImgSrcURL(String url) {
+        int backwardsCount = 0;
+        if (url.startsWith("data:image/")) {
+
+        } else if (url.startsWith("http")) {
+        } else if(url.startsWith("//")) {
+          url = url.substring(2);
+        } else if (url.startsWith("/")) {
+            String rootLocation = view.getEngine().getLocation().split("//")[1].split("/")[0];
+            url = rootLocation + url;
+        } else if (url.startsWith("..")) {
+            System.out.println("Working magic");
+            while (url.startsWith("..")) {
+                url = url.split("/")[1];
+                backwardsCount++;
+            }
+            String location = view.getEngine().getLocation();
+            for (int i = 0; i < backwardsCount; i++) {
+                location = location.substring(0, location.lastIndexOf("/"));
+            }
+            url = location + url;
+        }
+        if(url.contains("?")) url = url.split("g?")[0] + "g";
+        return url;
+    }
 
     public boolean isURL(String url) {
         try {

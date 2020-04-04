@@ -1,33 +1,27 @@
-package main;
+package main.downloadtasks;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.concurrent.Task;
-import javafx.scene.control.Alert;
+
+import main.HttpCManager;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class FileDownloadTask extends Task<File> {
+public class FileDownloadTask extends DownloadTask {
 
 
     private static final int DEFAULT_BUFFER_SIZE = 1024;
-
     private HttpClient httpClient;
     private String remoteUrl;
-    private File localFile;
     private int bufferSize;
-    private String taskID;
 
     public FileDownloadTask(String remoteUrl, File localFile, String taskID)
     {
         this(HttpCManager.getClient(), remoteUrl, localFile, taskID, DEFAULT_BUFFER_SIZE);
+        setDownloadedAt();
     }
 
     public FileDownloadTask(HttpClient httpClient, String remoteUrl, File localFile, String taskID, int bufferSize)
@@ -37,47 +31,13 @@ public class FileDownloadTask extends Task<File> {
         this.localFile = localFile;
         this.bufferSize = bufferSize;
         this.taskID = taskID;
+        addStateChangeListener();
 
-
-        stateProperty().addListener(new ChangeListener<State>()
-        {
-            public void changed(ObservableValue<? extends State> source, State oldState, State newState)
-            {
-                if (newState.equals(State.SUCCEEDED))
-                {
-                    Main.decreaseNumDownloadThreads();
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Success!");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Succeeded downloading "+localFile.getName()+" !");
-
-                    alert.showAndWait();
-                }
-                else if (newState.equals(State.FAILED))
-                {
-                    Main.decreaseNumDownloadThreads();
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Error!");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Failed downloading "+localFile.getName()+" !");
-                    alert.showAndWait();
-                }
-            }
-        });
     }
 
     public String getRemoteUrl() {
         return remoteUrl;
     }
-
-    public File getLocalFile() {
-        return localFile;
-    }
-
-    public String getTaskID() {
-        return taskID;
-    }
-
     protected File call() throws Exception
     {
 
