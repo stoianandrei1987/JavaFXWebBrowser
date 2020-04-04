@@ -14,6 +14,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 import main.HistoryItem;
+import main.Main;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -110,7 +111,11 @@ public class HistoryController extends Controller implements Initializable {
 
     public void removePressed(ActionEvent event)
     {
-        System.out.println("Remove : " + historyList.getSelectionModel().getSelectedIndex());
+        Main.getHList().
+                removeIf(item -> item == listViewItemsMap.get(historyList.
+                        getSelectionModel().getSelectedIndex()));
+        fillList(searchDate);
+
     }
 }
 
