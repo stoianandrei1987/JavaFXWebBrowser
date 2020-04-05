@@ -70,6 +70,7 @@ public class Main extends Application {
     private static boolean mouseOverImage = false;
     private String mouseOverImageSrc = "";
     private static DownloadTask taskBoundToPb = null;
+    private String initialDir = "C:\\Users\\Andrei\\Desktop\\testfolder";
 
 
     public void initialize() {
@@ -447,10 +448,12 @@ public class Main extends Application {
             //begin download
 
             FileChooser chooser = new FileChooser();
+            chooser.setInitialDirectory(new File(initialDir));
             if(!base64) chooser.setInitialFileName(newValue.substring(newValue.lastIndexOf("/") + 1));
             else chooser.setInitialFileName("base64image."+newValue.split(";")[0].split("/")[1]);
             File file = chooser.showSaveDialog(primaryStageCopy);
             if (file != null) {
+
 
                 numThreadsDownloading.set(numThreadsDownloading.get() + 1);
                 String taskID = "DOWNLOAD" + (downloads.size() + 1);

@@ -6,16 +6,14 @@ import javafx.concurrent.Worker;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Hyperlink;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.RowConstraints;
 import main.Main;
 import main.downloadtasks.DownloadTask;
+
 
 import java.io.IOException;
 
@@ -44,7 +42,11 @@ public class DownloadsVBoxItem {
             hBox.getChildren().addAll(open, restart, delete);
         if(task.getState() == Worker.State.SUCCEEDED)
             hBox.getChildren().addAll(open, delete);
+        if(task.getState() == Worker.State.READY)
+            hBox.getChildren().addAll(open, cancel, delete);
     }
+
+
 
     public DownloadsVBoxItem(DownloadTask task) {
 
@@ -88,17 +90,27 @@ public class DownloadsVBoxItem {
 
         this.task = task;
         this.pane = new GridPane();
-        this.pane.setMaxHeight(70);
+        this.pane.setMaxHeight(150);
         RowConstraints r1 = new RowConstraints();
         RowConstraints r2 = new RowConstraints();
         RowConstraints r3 = new RowConstraints();
         ColumnConstraints c1 = new ColumnConstraints();
         ColumnConstraints c2 = new ColumnConstraints();
-        r1.setPercentHeight(33);
+        r1.setPercentHeight(43);
         r2.setPercentHeight(33);
-        c1.setPercentWidth(70);
-        c2.setPercentWidth(30);
-        filename.setText("      filename : "+task.getLocalFile().getName());
+        c1.setPercentWidth(60);
+        c2.setPercentWidth(40);
+        GridPane.setHalignment(hBox, HPos.RIGHT);
+        hBox.setPadding(new Insets(0, 100, 0, 0));
+        filename.setWrapText(true);
+        filename.setMaxWidth(270);
+        filename.setMaxHeight(15);
+        filename.setMinHeight(15);
+        filename.setMinWidth(270);
+
+
+        String padded = String.format("%-40s", "      filename : "+task.getLocalFile().getName());
+        filename.setText(padded);
         downloadStatus.setText("      status : "+task.getState().toString());
         task.stateProperty().addListener(new ChangeListener<Worker.State>() {
             @Override
@@ -132,4 +144,6 @@ public class DownloadsVBoxItem {
         pane.getRowConstraints().addAll(r1, r2, r3);
 
     }
+
+
 }
