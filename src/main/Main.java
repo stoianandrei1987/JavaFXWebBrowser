@@ -60,16 +60,16 @@ public class Main extends Application {
     private boolean backForwardWasPressed = false;
     private boolean incognitoMode;
     private Map<String, Long> visitedAddresses = new HashMap<>();
-    private ProgressBar progressBar = new ProgressBar();
-    private HBox bottomHBox = new HBox();
-    private Label loadLabel = new Label();
+    private static ProgressBar progressBar = new ProgressBar();
+    private static HBox bottomHBox = new HBox();
+    private static Label loadLabel = new Label();
     private Stage primaryStageCopy;
     private static SimpleIntegerProperty numThreadsDownloading = new SimpleIntegerProperty(0);
     private static List<DownloadTask> downloads = new ArrayList<>();
-    private boolean progressBarBoundToThread = false;
-    private boolean mouseOverImage = false;
+    private static boolean progressBarBoundToThread = false;
+    private static boolean mouseOverImage = false;
     private String mouseOverImageSrc = "";
-    private DownloadTask taskBoundToPb = null;
+    private static DownloadTask taskBoundToPb = null;
 
 
     public void initialize() {
@@ -473,9 +473,10 @@ public class Main extends Application {
     }
 
 
-    public void bindPbToDownloadTask(DownloadTask fileDownloadTask) {
+    public static void bindPbToDownloadTask(DownloadTask fileDownloadTask) {
         System.out.println("Binding progress bar to : " + fileDownloadTask.getTaskID());
         loadLabel.setText("Downloading file!          ");
+        progressBarBoundToThread = true;
         taskBoundToPb = fileDownloadTask;
         progressBar.progressProperty().bind(fileDownloadTask.progressProperty());
         bottomHBox.visibleProperty().bind(fileDownloadTask.runningProperty());
@@ -561,13 +562,15 @@ public class Main extends Application {
         } else if (url.startsWith("..")) {
             System.out.println("Working magic on :"+url);
             while (url.startsWith("..")) {
-                url = url.split("/")[1];
+                url = url.substring(url.indexOf("/")+1);
                 backwardsCount++;
+                System.out.println("-----Magic Done!-------");
             }
             String location = view.getEngine().getLocation();
             for (int i = 0; i < backwardsCount; i++) {
                 location = location.substring(0, location.lastIndexOf("/"));
             }
+            System.out.println("location : "+location);
             url = location + url;
         }
         if(url.contains("?")) url = url.split("g?")[0] + "g";

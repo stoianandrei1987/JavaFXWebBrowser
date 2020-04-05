@@ -53,6 +53,7 @@ public class FileDownloadTask extends DownloadTask {
         try
         {
             long fileSize = response.getEntity().getContentLength();
+            if(localFile.exists()) localFile.delete();
             File dir = localFile.getParentFile();
             dir.mkdirs();
 

@@ -45,11 +45,13 @@ public abstract class DownloadTask extends Task<File> {
                     alert.showAndWait();
                 } else if (newState.equals(State.FAILED)) {
                     Main.decreaseNumDownloadThreads();
+                    if(true)
+                    {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error!");
                     alert.setHeaderText(null);
                     alert.setContentText("Failed downloading " + localFile.getName() + " !");
-                    alert.showAndWait();
+                    alert.showAndWait(); }
                 }
             }
         });

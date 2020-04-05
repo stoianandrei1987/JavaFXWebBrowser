@@ -31,6 +31,7 @@ public class Base64DownloadTask extends DownloadTask {
         // InputStream remoteContentStream = new ByteArrayInputStream(data);
         try {
             // long fileSize = data.length;
+            if(localFile.exists())localFile.delete();
             File dir = localFile.getParentFile();
             dir.mkdirs();
 

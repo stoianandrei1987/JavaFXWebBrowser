@@ -65,6 +65,7 @@ public class DownloadsVBoxItem {
         });
 
         cancel.setOnAction(event -> {
+            Main.decreaseNumDownloadThreads();
             task.cancel();
         });
 
@@ -75,6 +76,7 @@ public class DownloadsVBoxItem {
             Main.getDownloads().add(index, taskCopy);
             new Thread(taskCopy).start();
             Main.getNumthreadsDownloading().set(Main.getNumthreadsDownloading().get()+1);
+            if(Main.getNumthreadsDownloading().get()==1) Main.bindPbToDownloadTask(taskCopy);
         });
 
         delete.setOnAction(event -> {
@@ -119,7 +121,7 @@ public class DownloadsVBoxItem {
         hBox.setSpacing(20);
         //hBox.setTranslateY();
         hBox.setTranslateX(150);
-        hBox.getChildren().addAll(open, cancel, delete);
+        setHBoxOptions();
         progressBar.setTranslateX(85);
         progressBar.setTranslateY(2);
         progressBar.setMinWidth(120);
