@@ -78,6 +78,7 @@ public class HistoryController extends Controller implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         searchDate = LocalDateTime.now();
         fillList(searchDate);
+        window.setTitle("History");
         window.setMinWidth(500);
         window.initModality(Modality.WINDOW_MODAL);
         window.setResizable(false);

@@ -65,7 +65,7 @@ public class Main extends Application {
     private Label loadLabel = new Label();
     private Stage primaryStageCopy;
     private static SimpleIntegerProperty numThreadsDownloading = new SimpleIntegerProperty(0);
-    private List<DownloadTask> downloads = new ArrayList<>();
+    private static List<DownloadTask> downloads = new ArrayList<>();
     private boolean progressBarBoundToThread = false;
     private boolean mouseOverImage = false;
     private String mouseOverImageSrc = "";
@@ -123,6 +123,10 @@ public class Main extends Application {
 
     public static ObservableList<HistoryItem> getHList() {
         return historyItemObservableList;
+    }
+
+    public static List<DownloadTask> getDownloads() {
+        return downloads;
     }
 
     @Override
@@ -485,6 +489,10 @@ public class Main extends Application {
         bottomHBox.visibleProperty().bind(view.getEngine().getLoadWorker().runningProperty());
     }
 
+    public static SimpleIntegerProperty getNumthreadsDownloading() {
+        return numThreadsDownloading;
+    }
+
     public static void decreaseNumDownloadThreads() {
         numThreadsDownloading.set(numThreadsDownloading.get() - 1);
     }
@@ -551,7 +559,7 @@ public class Main extends Application {
             String rootLocation = view.getEngine().getLocation().split("//")[1].split("/")[0];
             url = rootLocation + url;
         } else if (url.startsWith("..")) {
-            System.out.println("Working magic");
+            System.out.println("Working magic on :"+url);
             while (url.startsWith("..")) {
                 url = url.split("/")[1];
                 backwardsCount++;
