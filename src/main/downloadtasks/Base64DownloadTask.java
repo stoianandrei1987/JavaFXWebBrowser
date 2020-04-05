@@ -8,6 +8,11 @@ public class Base64DownloadTask extends DownloadTask {
     private String base64;
     private int bufferSize = 1024;
 
+    @Override
+    public DownloadTask copyTask() {
+        return new Base64DownloadTask(this.base64, this.localFile);
+    }
+
     public Base64DownloadTask(String base64, File localFile) {
         this.base64 = base64;
         this.localFile = localFile;

@@ -18,6 +18,11 @@ public class FileDownloadTask extends DownloadTask {
     private String remoteUrl;
     private int bufferSize;
 
+    @Override
+    public DownloadTask copyTask() {
+        return new FileDownloadTask(this.remoteUrl, this.localFile, this.taskID);
+    }
+
     public FileDownloadTask(String remoteUrl, File localFile, String taskID)
     {
         this(HttpCManager.getClient(), remoteUrl, localFile, taskID, DEFAULT_BUFFER_SIZE);

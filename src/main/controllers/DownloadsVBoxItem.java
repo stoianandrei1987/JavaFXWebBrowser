@@ -69,7 +69,12 @@ public class DownloadsVBoxItem {
         });
 
         restart.setOnAction(event -> {
-            task.run();
+            int index = Main.getDownloads().indexOf(task);
+            Main.getDownloads().remove(index);
+            DownloadTask taskCopy = task.copyTask();
+            Main.getDownloads().add(index, taskCopy);
+            new Thread(taskCopy).start();
+            Main.getNumthreadsDownloading().set(Main.getNumthreadsDownloading().get()+1);
         });
 
         delete.setOnAction(event -> {

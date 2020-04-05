@@ -19,13 +19,14 @@ public abstract class DownloadTask extends Task<File> {
         downloadedAt = LocalDateTime.now();
     }
 
+    /*
     public boolean equalsDeleted(DownloadTask check) {
         try {if (this.getLocalFile().getCanonicalPath().
                 equals(check.getLocalFile().getCanonicalPath()) &&
                         this.downloadedAt.equals(check.getDownloadedAt())) return true;
         } catch(IOException e) {e.printStackTrace();}
         return false;
-    }
+    } */
 
     public LocalDateTime getDownloadedAt() {
         return downloadedAt;
@@ -62,4 +63,5 @@ public abstract class DownloadTask extends Task<File> {
         return taskID;
     }
 
+    public abstract DownloadTask copyTask();
 }
