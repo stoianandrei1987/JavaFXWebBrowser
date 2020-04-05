@@ -23,3 +23,11 @@
 .history-arrow:hover{
 -fx-fill: grey;
 }
+
+.downloads-grid-pane {
+-fx-background-color: white;
+}
+
+.downloads-scroll-pane {
+-fx-background-color: grey;
+}

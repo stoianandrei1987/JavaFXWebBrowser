@@ -13,9 +13,7 @@ public class Base64DownloadTask extends DownloadTask {
         this.localFile = localFile;
         setDownloadedAt();
         addStateChangeListener();
-    }
-
-    ;
+    };
 
     @Override
     protected File call() throws Exception {
