@@ -16,9 +16,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
@@ -36,7 +34,11 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.events.EventTarget;
 
+import javax.xml.transform.TransformerException;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -71,6 +73,8 @@ public class Main extends Application {
     private String mouseOverImageSrc = "";
     private static DownloadTask taskBoundToPb = null;
     private String initialDir = "C:\\Users\\Andrei\\Desktop\\testfolder";
+    private static final Clipboard clipboard = Clipboard.getSystemClipboard();
+    private static final ClipboardContent clipboardContent = new ClipboardContent();
 
 
     public void initialize() {
@@ -380,13 +384,41 @@ public class Main extends Application {
         });
     }
 
+    private String getSelectedText() {
+        return (String) view.getEngine()
+                .executeScript("window.getSelection().toString()");
+    }
+
     private void createContextMenu(WebView webView) {
         String[] imgDownloadSrc = new String[1];
         ContextMenu contextMenu = new ContextMenu();
+        MenuItem save = new MenuItem("Copy");
+        save.setOnAction(e -> {
+                    clipboardContent.clear();
+                    clipboardContent.putString(getSelectedText());
+                    clipboard.setContent(clipboardContent);
+                }
+        );
         MenuItem reload = new MenuItem("Reload");
         reload.setOnAction(e -> webView.getEngine().reload());
         MenuItem savePage = new MenuItem("Save Page");
-        savePage.setOnAction(e -> System.out.println("Trying save page..."));
+        savePage.setOnAction(e -> {
+            //String htmlCode = view.getEngine().getDocument().body().;
+            Document d = view.getEngine().getDocument();
+            String fileName = "page.html";
+            FileChooser chooser = new FileChooser();
+            chooser.setInitialDirectory(new File(initialDir));
+            chooser.setInitialFileName(fileName);
+            File f = chooser.showSaveDialog(primaryStageCopy);
+            if(f!=null)
+            try {
+                IOClass.printDocument(d, new FileOutputStream(f));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            } catch (TransformerException ex) {
+                ex.printStackTrace();
+            }
+        });
 
         MenuItem saveImage = new MenuItem("Save Image");
         saveImage.setOnAction(e -> tryDownload(imgDownloadSrc[0]));
@@ -401,18 +433,22 @@ public class Main extends Application {
                 if (mouseOverImage) contextMenu.getItems().add(saveImage);
                 imgDownloadSrc[0] = mouseOverImageSrc;
                 contextMenu.show(webView, e.getScreenX(), e.getScreenY());
+
+                if (!getSelectedText().equals("")) contextMenu.getItems().add(save);
+
             } else {
                 contextMenu.getItems().remove(saveImage);
+                contextMenu.getItems().remove(save);
                 contextMenu.hide();
             }
         });
     }
 
     private boolean tryDownload(String newValue) {
-        System.out.println("trying to download : "+ newValue);
-        if(newValue.startsWith("www")) {
-            if(isURL("https://" + newValue)) newValue ="https://" + newValue;
-                else newValue = "http://" + newValue;
+        System.out.println("trying to download : " + newValue);
+        if (newValue.startsWith("www")) {
+            if (isURL("https://" + newValue)) newValue = "https://" + newValue;
+            else newValue = "http://" + newValue;
         }
 
         return tryDownload(newValue, true);
@@ -440,7 +476,10 @@ public class Main extends Application {
         String[] downloadableExtensions = {".gif", ".bin", ".docx", ".doc", ".xls", ".zip", ".exe", ".rar", ".pdf", ".jar", ".png", ".jpg", ".gif"};
         if (check == true) {
             for (String ext : downloadableExtensions) if (newValue.endsWith(ext)) start = true;
-            if(newValue.startsWith("data:image")) { start = true; base64 = true;}
+            if (newValue.startsWith("data:image")) {
+                start = true;
+                base64 = true;
+            }
         }
         if (check == false) start = true;
 
@@ -449,8 +488,8 @@ public class Main extends Application {
 
             FileChooser chooser = new FileChooser();
             chooser.setInitialDirectory(new File(initialDir));
-            if(!base64) chooser.setInitialFileName(newValue.substring(newValue.lastIndexOf("/") + 1));
-            else chooser.setInitialFileName("base64image."+newValue.split(";")[0].split("/")[1]);
+            if (!base64) chooser.setInitialFileName(newValue.substring(newValue.lastIndexOf("/") + 1));
+            else chooser.setInitialFileName("base64image." + newValue.split(";")[0].split("/")[1]);
             File file = chooser.showSaveDialog(primaryStageCopy);
             if (file != null) {
 
@@ -557,15 +596,15 @@ public class Main extends Application {
         if (url.startsWith("data:image/")) {
 
         } else if (url.startsWith("http")) {
-        } else if(url.startsWith("//")) {
-          url = url.substring(2);
+        } else if (url.startsWith("//")) {
+            url = url.substring(2);
         } else if (url.startsWith("/")) {
             String rootLocation = view.getEngine().getLocation().split("//")[1].split("/")[0];
             url = rootLocation + url;
         } else if (url.startsWith("..")) {
-            System.out.println("Working magic on :"+url);
+            System.out.println("Working magic on :" + url);
             while (url.startsWith("..")) {
-                url = url.substring(url.indexOf("/")+1);
+                url = url.substring(url.indexOf("/") + 1);
                 backwardsCount++;
                 System.out.println("-----Magic Done!-------");
             }
@@ -573,10 +612,10 @@ public class Main extends Application {
             for (int i = 0; i < backwardsCount; i++) {
                 location = location.substring(0, location.lastIndexOf("/"));
             }
-            System.out.println("location : "+location);
+            System.out.println("location : " + location);
             url = location + url;
         }
-        if(url.contains("?")) url = url.split("g?")[0] + "g";
+        if (url.contains("?")) url = url.split("g?")[0] + "g";
         return url;
     }
 
