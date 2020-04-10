@@ -24,6 +24,7 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import main.controllers.DownloadsController;
 import main.controllers.HistoryController;
+import main.controllers.JSConsoleController;
 import main.downloadtasks.Base64DownloadTask;
 import main.downloadtasks.DownloadTask;
 import main.downloadtasks.FileDownloadTask;
@@ -360,6 +361,15 @@ public class Main extends Application {
                 textField.setPrefWidth(newValue.doubleValue() * 0.77);
             }
         });
+
+        view.getEngine().setOnAlert(event -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setHeaderText(null);
+            alert.setContentText(event.getData());
+            alert.showAndWait();
+        });
+
+
         upperHBox.getChildren().addAll(backBtn, forwBtn, stopBtn, reloadBtn, textField, historyBtn, downloadsBtn, menuBtn);
         GridPane.setConstraints(upperHBox, 0, 0, 1, 1);
         textField.setMinWidth(500);
@@ -383,6 +393,8 @@ public class Main extends Application {
 
         });
     }
+
+
 
     private String getSelectedText() {
         return (String) view.getEngine()
@@ -426,7 +438,10 @@ public class Main extends Application {
         MenuItem viewSource = new MenuItem("View Source");
         viewSource.setOnAction(e -> System.out.println("Trying view source..."));
 
-        contextMenu.getItems().addAll(reload, savePage, viewSource);
+        MenuItem javascriptConsole = new MenuItem("JavaScript Console");
+        javascriptConsole.setOnAction(e -> new JSConsoleController().createWindow());
+
+        contextMenu.getItems().addAll(reload, savePage, viewSource, javascriptConsole);
 
         webView.setOnMousePressed(e -> {
             if (e.getButton() == MouseButton.SECONDARY) {
@@ -442,6 +457,10 @@ public class Main extends Application {
                 contextMenu.hide();
             }
         });
+    }
+
+    public static WebView getView() {
+        return view;
     }
 
     private boolean tryDownload(String newValue) {

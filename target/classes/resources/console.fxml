@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<?import javafx.geometry.Insets?>
+<GridPane stylesheets="stylesheet.css" styleClass="console-grid-pane" minHeight="400.0" maxWidth="400" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.controllers.JSConsoleController">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+   <children>
+      <TextArea fx:id="console" maxHeight="400" maxWidth="400.0" GridPane.rowIndex="0" GridPane.rowSpan="1"/>
+       <TextArea fx:id="log" maxHeight="400" maxWidth="400.0" GridPane.rowIndex="1" GridPane.rowSpan="1" translateY="30"/>
+      <Button styleClass="history-btn" onAction="#closeWindow" text="Close" GridPane.rowIndex="2" GridPane.rowSpan="1"
+              GridPane.valignment="CENTER" GridPane.halignment="CENTER" translateX="-50" translateY="30"></Button>
+       <Button styleClass="history-btn" onAction="#runScript" text="Run" GridPane.rowIndex="2" GridPane.rowSpan="1"
+               GridPane.valignment="CENTER" GridPane.halignment="CENTER" translateX="50" translateY="30"></Button>
+   </children>
+    <columnConstraints>
+    <ColumnConstraints />
+
+</columnConstraints>
+    <rowConstraints>
+        <RowConstraints percentHeight="50"/>
+        <RowConstraints percentHeight="35"/>
+        <RowConstraints percentHeight="15" />
+    </rowConstraints>
+</GridPane>

@@ -28,6 +28,10 @@
 -fx-background-color: white;
 }
 
+.console-grid-pane {
+-fx-background-color:white;
+}
+
 .downloads-scroll-pane {
 -fx-background-color: grey;
 }
