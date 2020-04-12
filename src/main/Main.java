@@ -76,6 +76,7 @@ public class Main extends Application {
     private String initialDir = "C:\\Users\\Andrei\\Desktop\\testfolder";
     private static final Clipboard clipboard = Clipboard.getSystemClipboard();
     private static final ClipboardContent clipboardContent = new ClipboardContent();
+    private static boolean viewwingPageSource = false;
 
 
     public void initialize() {
@@ -163,7 +164,10 @@ public class Main extends Application {
         view.getEngine().titleProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                if (currItem != null && newValue != null) {
+                if(viewwingPageSource) {
+
+                }
+                else if (currItem != null && newValue != null) {
                     backForwardIndex++;
                     currItem.setTitle(newValue);
                     currItem.setCreatedAt(LocalDateTime.now());
@@ -189,12 +193,16 @@ public class Main extends Application {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
 
+                if(!viewwingPageSource) {
+                    currItem = new HistoryItem();
+                    currItem.setUri(newValue);
+                    textField.setText(newValue);
+                    if (oldValue != null && !oldValue.equals("")
+                            && !shortenURL(oldValue).equals(shortenURL(newValue)))
+                        registerVisit(shortenURL(newValue));
+                }
 
-                currItem = new HistoryItem();
-                currItem.setUri(newValue);
-                textField.setText(newValue);
-                if (oldValue != null && !shortenURL(oldValue).equals(shortenURL(newValue)))
-                    registerVisit(shortenURL(newValue));
+                else textField.setText("pagesource");
 
             }
         });
@@ -299,7 +307,12 @@ public class Main extends Application {
         });
 
         backBtn.setOnAction(event -> {
-            if (backForwardIndex >= 1) {
+            if(viewwingPageSource) {
+                viewwingPageSource = false;
+                loadPage(backForwardList.get(backForwardIndex).getUri());
+            }
+
+            else if (backForwardIndex >= 1) {
                 backForwardWasPressed = true;
                 backForwardIndex--;
                 loadPage(backForwardList.get(backForwardIndex).getUri());
@@ -315,6 +328,7 @@ public class Main extends Application {
         });
 
         reloadBtn.setOnAction(event -> {
+            if(!viewwingPageSource)
             loadPage(backForwardList.get(backForwardIndex).getUri());
         });
 
@@ -436,17 +450,25 @@ public class Main extends Application {
         saveImage.setOnAction(e -> tryDownload(imgDownloadSrc[0]));
 
         MenuItem viewSource = new MenuItem("View Source");
-        viewSource.setOnAction(e -> System.out.println("Trying view source..."));
+        viewSource.setOnAction(e -> {
+            viewwingPageSource = true;
+            view.getEngine().loadContent(PageSource.getPageSourceHTMLString(), "text/html");
+        });
 
         MenuItem javascriptConsole = new MenuItem("JavaScript Console");
         javascriptConsole.setOnAction(e -> new JSConsoleController().createWindow());
+
 
         contextMenu.getItems().addAll(reload, savePage, viewSource, javascriptConsole);
 
         webView.setOnMousePressed(e -> {
             if (e.getButton() == MouseButton.SECONDARY) {
+
+
                 if (mouseOverImage) contextMenu.getItems().add(saveImage);
                 imgDownloadSrc[0] = mouseOverImageSrc;
+
+                if(!viewwingPageSource)
                 contextMenu.show(webView, e.getScreenX(), e.getScreenY());
 
                 if (!getSelectedText().equals("")) contextMenu.getItems().add(save);
@@ -648,6 +670,7 @@ public class Main extends Application {
     }
 
     public String shortenURL(String url) {
+
         if (url.startsWith("https://")) url = url.substring(8);
         else url = url.substring(7);
         if (url.contains("/")) url = url.substring(0, url.indexOf("/"));
@@ -655,6 +678,7 @@ public class Main extends Application {
     }
 
     public void registerVisit(String url) {
+
 
         if (visitedAddresses.containsKey(url)) {
             Long nv = visitedAddresses.get(url);
