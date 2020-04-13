@@ -3,7 +3,8 @@ package main;
 import javax.xml.transform.TransformerException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class PageSource {
@@ -33,9 +34,21 @@ public class PageSource {
                 "class=\"green\">$2</SPAN><SPAN class=\"blue\">$3</SPAN>";
         ns = ns.replaceAll("(&lt;/?[\\w+\\-]+&gt;)", "<SPAN CLASS=\"blue\">$0</SPAN>");
         ns = ns.replaceAll("(&lt;\\S+\\s)(\\S+=\".*\"\\s?)+(/?&gt;)", repl1);
+
+        Matcher m = Pattern.compile("((&lt;[^!]/?\\S+[\\s(&gt)])|(&lt;A\\s))").matcher(ns);
+        StringBuilder sb = new StringBuilder();
+        int last = 0;
+        while(m.find()) {
+            sb.append(ns.substring(last, m.start()));
+            sb.append(m.group(0).toLowerCase());
+            last = m.end();
+        }
+        sb.append(ns.substring(last));
+        ns = sb.toString();
+
        // ns = ns.replaceAll("(\")(&gt;)", "$0</SPAN><SPAN CLASS=\"blue\">$1</SPAN>");
         String styleString = "<style>.blue{color:blue;}.green{color:green;}</style>";
-        StringBuilder sb = new StringBuilder();
+        sb.delete(0, sb.length()-1);
         sb.append("<!DOCTYPE html><html><head><title>Page source : </title>"+
                 styleString+"</head><body><pre><code>");
         sb.append(ns);
