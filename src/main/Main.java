@@ -14,6 +14,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
@@ -36,12 +38,13 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.events.EventTarget;
 
 import javax.xml.transform.TransformerException;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -77,7 +80,6 @@ public class Main extends Application {
     private static final Clipboard clipboard = Clipboard.getSystemClipboard();
     private static final ClipboardContent clipboardContent = new ClipboardContent();
     private static boolean viewwingPageSource = false;
-
 
     public void initialize() {
 
