@@ -178,6 +178,7 @@ public class Main extends Application {
                     if (!backForwardWasPressed) backForwardList = backForwardList.subList(0, backForwardIndex + 1);
                     backForwardWasPressed = false;
 
+                    //testing
                     //deletes penultimate entry if it is squal to final entry
                     if (backForwardIndex >= 1 &&
                             backForwardList.get(backForwardIndex).
