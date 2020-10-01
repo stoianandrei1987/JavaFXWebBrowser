@@ -80,6 +80,7 @@ public class Main extends Application {
     private static final Clipboard clipboard = Clipboard.getSystemClipboard();
     private static final ClipboardContent clipboardContent = new ClipboardContent();
     private static boolean viewwingPageSource = false;
+    private static String extraCSSfix;
 
     public void initialize() {
 
@@ -94,6 +95,10 @@ public class Main extends Application {
         view = new WebView();
         view.setContextMenuEnabled(false);
         createContextMenu(view);
+        extraCSSfix = new Scanner(Main.class.getClassLoader().getResourceAsStream("pagefix.css"), "UTF-8")
+                .useDelimiter("\\A").next();
+        view.getEngine().setUserStyleSheetLocation(Main.class.getClassLoader().
+                getResource("pagefix.css").toExternalForm());
         numThreadsDownloading.addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
@@ -166,10 +171,9 @@ public class Main extends Application {
         view.getEngine().titleProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                if(viewwingPageSource) {
+                if (viewwingPageSource) {
 
-                }
-                else if (currItem != null && newValue != null) {
+                } else if (currItem != null && newValue != null) {
                     backForwardIndex++;
                     currItem.setTitle(newValue);
                     currItem.setCreatedAt(LocalDateTime.now());
@@ -196,16 +200,14 @@ public class Main extends Application {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
 
-                if(!viewwingPageSource) {
+                if (!viewwingPageSource) {
                     currItem = new HistoryItem();
                     currItem.setUri(newValue);
                     textField.setText(newValue);
                     if (oldValue != null && !oldValue.equals("")
                             && !shortenURL(oldValue).equals(shortenURL(newValue)))
                         registerVisit(shortenURL(newValue));
-                }
-
-                else textField.setText("pagesource");
+                } else textField.setText("pagesource");
 
             }
         });
@@ -213,7 +215,16 @@ public class Main extends Application {
         view.getEngine().getLoadWorker().stateProperty().addListener(new ChangeListener<Worker.State>() {
             @Override
             public void changed(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
+
+                if (newValue.toString().equals("RUNNING")) {
+
+                }
                 if (newValue.toString().equals("SUCCEEDED")) {
+                    String ytJS = new Scanner(Main.class.getClassLoader().
+                            getResourceAsStream("youtube.js"), "UTF-8").useDelimiter("\\A").next();
+                    if(view.getEngine().getLocation().contains("www.youtube.com")) {
+                        view.getEngine().executeScript(ytJS);
+                    }
 
                     org.w3c.dom.events.EventListener mouseOverEventListener = new org.w3c.dom.events.EventListener() {
                         @Override
@@ -245,6 +256,21 @@ public class Main extends Application {
                     }
 
                 }
+
+                /*
+
+                if(oldValue.toString().equals("READY") && newValue.toString().equals("SCHEDULED")) {
+
+
+                    if (backForwardList.get(backForwardIndex).getUri().contains("www.google.")) {
+                        System.out.println("ready -> running");
+                        view.getEngine().
+                                executeScript("document.getElementById(\"lb\").style.display=\"none\";");
+                    };
+                }
+
+
+                 */
 
                 if (oldValue.toString().equals("RUNNING") && newValue.toString().equals("CANCELLED"))
                     tryDownload(view.getEngine().getLocation());
@@ -310,12 +336,10 @@ public class Main extends Application {
         });
 
         backBtn.setOnAction(event -> {
-            if(viewwingPageSource) {
+            if (viewwingPageSource) {
                 viewwingPageSource = false;
                 loadPage(backForwardList.get(backForwardIndex).getUri());
-            }
-
-            else if (backForwardIndex >= 1) {
+            } else if (backForwardIndex >= 1) {
                 backForwardWasPressed = true;
                 backForwardIndex--;
                 loadPage(backForwardList.get(backForwardIndex).getUri());
@@ -331,8 +355,8 @@ public class Main extends Application {
         });
 
         reloadBtn.setOnAction(event -> {
-            if(!viewwingPageSource)
-            loadPage(backForwardList.get(backForwardIndex).getUri());
+            if (!viewwingPageSource)
+                loadPage(backForwardList.get(backForwardIndex).getUri());
         });
 
 
@@ -412,7 +436,6 @@ public class Main extends Application {
     }
 
 
-
     private String getSelectedText() {
         return (String) view.getEngine()
                 .executeScript("window.getSelection().toString()");
@@ -439,14 +462,14 @@ public class Main extends Application {
             chooser.setInitialDirectory(new File(initialDir));
             chooser.setInitialFileName(fileName);
             File f = chooser.showSaveDialog(primaryStageCopy);
-            if(f!=null)
-            try {
-                IOClass.printDocument(d, new FileOutputStream(f));
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            } catch (TransformerException ex) {
-                ex.printStackTrace();
-            }
+            if (f != null)
+                try {
+                    IOClass.printDocument(d, new FileOutputStream(f));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                } catch (TransformerException ex) {
+                    ex.printStackTrace();
+                }
         });
 
         MenuItem saveImage = new MenuItem("Save Image");
@@ -471,8 +494,8 @@ public class Main extends Application {
                 if (mouseOverImage) contextMenu.getItems().add(saveImage);
                 imgDownloadSrc[0] = mouseOverImageSrc;
 
-                if(!viewwingPageSource)
-                contextMenu.show(webView, e.getScreenX(), e.getScreenY());
+                if (!viewwingPageSource)
+                    contextMenu.show(webView, e.getScreenX(), e.getScreenY());
 
                 if (!getSelectedText().equals("")) contextMenu.getItems().add(save);
 
@@ -696,7 +719,13 @@ public class Main extends Application {
     public static void loadPage(String url) {
 
         //   registerVisit(url);
-        Platform.runLater(() -> view.getEngine().load(url));
+
+        Platform.runLater(() -> {
+            //System.out.println(Main.class.getClassLoader().getResource("stylesheet.css").toString());
+
+            view.getEngine().load(url);
+            //  view.getEngine().getDocument().appendChild();
+        });
 
     }
 

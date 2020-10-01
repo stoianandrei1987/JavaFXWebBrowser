@@ -1,0 +1,12 @@
+#lb {
+display: none !important;
+}
+
+.paper-dialog {
+display: none !important;
+}
+
+.iron-overlay-backdrop {
+overflow: hidden !important;
+}
+
