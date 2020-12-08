@@ -158,9 +158,9 @@ public class Main extends Application {
         RowConstraints r1 = new RowConstraints(),
                 r2 = new RowConstraints(),
                 r3 = new RowConstraints();
-        r1.setPercentHeight(10);
-      //  r2.setPercentHeight(60);
-        r3.setPercentHeight(10);
+        r1.setPercentHeight(5);
+        r2.setPercentHeight(90);
+        r3.setPercentHeight(5);
 
         loadLabel.setMinWidth(79);
         progressBar.setMinWidth(500);
